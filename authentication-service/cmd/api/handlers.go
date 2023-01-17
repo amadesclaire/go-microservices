@@ -12,31 +12,28 @@ func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 
-	// check request is valid
 	err := app.readJSON(w, r, &requestPayload)
 	if err != nil {
-		app.errorJson(w, err, http.StatusBadRequest)
+		app.errorJSON(w, errors.New("couldn't read payload"), http.StatusBadRequest)
 		return
 	}
 
-	// validate user against database
+	// validate the user against the database
 	user, err := app.Models.User.GetByEmail(requestPayload.Email)
 	if err != nil {
-		app.errorJson(w, errors.New("invalid credentials"), http.StatusUnauthorized)
+		app.errorJSON(w, errors.New("invalid credentials"), http.StatusBadRequest)
 		return
 	}
 
-	// validate users password
-	vaild, err := user.PasswordMatches(requestPayload.Password)
-	if err != nil || !vaild {
-		app.errorJson(w, errors.New("invalid credentials"), http.StatusUnauthorized)
+	valid, err := user.PasswordMatches(requestPayload.Password)
+	if err != nil || !valid {
+		app.errorJSON(w, errors.New("invalid credentials"), http.StatusBadRequest)
 		return
 	}
 
-	// create json response
-	payload := jsonResponse{
+	payload := jsonResponse {
 		Error: false,
-		Message: fmt.Sprintf("Logged in as %s", user.Email),
+		Message: fmt.Sprintf("Logged in user %s", user.Email),
 		Data: user,
 	}
 
